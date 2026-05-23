@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>BillKar — GST Invoice Generator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --g:#1D9E75;--gd:#0F6E56;--gl:#E1F5EE;--gm:#9FE1CB;
+  --text:#1a1a1a;--t2:#555;--t3:#888;
+  --bg:#fafaf8;--bg2:#f3f2ee;--white:#fff;--border:#e0dfd8;
+  --red:#D85A30;--red-l:#FAECE7;
+  --syne:'Syne',sans-serif;--dm:'DM Sans',sans-serif;
+}
+body{font-family:var(--dm);background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
+nav{display:flex;justify-content:space-between;align-items:center;padding:1rem 1.5rem;background:var(--white);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50}
+.logo{font-family:var(--syne);font-weight:800;font-size:20px;letter-spacing:-0.5px}.logo span{color:var(--g)}
+.nav-tag{font-size:11px;font-weight:600;background:var(--gl);color:var(--gd);padding:4px 12px;border-radius:20px;border:1px solid var(--gm)}
+.container{max-width:700px;margin:0 auto;padding:2rem 1.25rem}
+h2{font-family:var(--syne);font-size:22px;font-weight:700;letter-spacing:-0.5px;margin-bottom:1.5rem}
+.card{background:var(--white);border:1px solid var(--border);border-radius:14px;padding:1.5rem;margin-bottom:1.25rem}
+.card-title{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin-bottom:1rem}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+label{display:block;font-size:12px;font-weight:500;color:var(--t2);margin-bottom:5px}
+input,select,textarea{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:9px;font-size:14px;font-family:var(--dm);background:var(--white);color:var(--text);transition:border-color 0.2s}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--g)}
+textarea{resize:vertical;min-height:60px}
+.field{margin-bottom:12px}
+.radio-group{display:flex;gap:8px}
+.radio-opt{flex:1;border:1.5px solid var(--border);border-radius:9px;padding:10px;text-align:center;cursor:pointer;font-size:13px;font-weight:500;transition:all 0.15s;color:var(--t2)}
+.radio-opt.active{border-color:var(--g);background:var(--gl);color:var(--gd)}
+.items-header{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 36px;gap:8px;padding:0 0 6px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--t3);border-bottom:1px solid var(--border);margin-bottom:8px}
+.item-row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 36px;gap:8px;margin-bottom:8px;align-items:center}
+.item-row input{font-size:13px;padding:8px 10px}
+.del-btn{width:32px;height:32px;border:1.5px solid var(--border);border-radius:8px;background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--t3);font-size:16px;transition:all 0.15s}
+.del-btn:hover{border-color:var(--red);color:var(--red);background:var(--red-l)}
+.add-btn{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;color:var(--g);background:none;border:1.5px dashed var(--gm);border-radius:9px;padding:8px 14px;cursor:pointer;width:100%;justify-content:center;margin-top:4px;transition:all 0.15s}
+.add-btn:hover{background:var(--gl)}
+.summary{background:var(--bg2);border-radius:10px;padding:1rem 1.25rem}
+.sum-row{display:flex;justify-content:space-between;font-size:14px;padding:4px 0;color:var(--t2)}
+.sum-row.total{font-size:16px;font-weight:600;color:var(--text);border-top:1px solid var(--border);margin-top:8px;padding-top:10px}
+.sum-row.total span:last-child{color:var(--g)}
+.btn-main{width:100%;padding:14px;background:var(--g);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;font-family:var(--dm);transition:background 0.2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-main:hover{background:var(--gd)}
+.btn-main:active{transform:scale(0.99)}
+.btn-secondary{width:100%;padding:12px;background:none;color:var(--g);border:1.5px solid var(--g);border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--dm);margin-top:10px;transition:all 0.2s}
+.btn-secondary:hover{background:var(--gl)}
+.toast{position:fixed;bottom:20px;right:20px;background:var(--text);color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:500;transform:translateY(100px);transition:transform 0.3s;z-index:999}
+.toast.show{transform:translateY(0)}
+@media(max-width:560px){
+  .grid2,.grid3{grid-template-columns:1fr}
+  .items-header{grid-template-columns:2fr 1fr 1fr 36px}
+  .items-header .h-amount{display:none}
+  .item-row{grid-template-columns:2fr 1fr 1fr 36px}
+  .item-row .amount-cell{display:none}
+}
+</style>
+</head>
+<body>
+<nav>
+  <div class="logo">bill<span>kar</span></div>
+  <div class="nav-tag">GST Invoice Generator</div>
+</nav>
+<div class="container">
+  <h2>Create GST Invoice</h2>
+
+  <!-- YOUR DETAILS -->
+  <div class="card">
+    <div class="card-title">Your business details</div>
+    <div class="grid2">
+      <div class="field"><label>Your name / business name *</label><input id="fromName" placeholder="Rahul Sharma Consulting"/></div>
+      <div class="field"><label>GSTIN (optional)</label><input id="fromGST" placeholder="22AAAAA0000A1Z5"/></div>
+    </div>
+    <div class="grid2">
+      <div class="field"><label>Email</label><input id="fromEmail" type="email" placeholder="rahul@gmail.com"/></div>
+      <div class="field"><label>Phone</label><input id="fromPhone" placeholder="+91 98765 43210"/></div>
+    </div>
+    <div class="field"><label>Address</label><textarea id="fromAddress" placeholder="123, MG Road, Jaipur, Rajasthan - 302001"></textarea></div>
+    <div class="field"><label>UPI ID (for payment link)</label><input id="upiId" placeholder="rahul@upi"/></div>
+  </div>
+
+  <!-- CLIENT DETAILS -->
+  <div class="card">
+    <div class="card-title">Client details</div>
+    <div class="grid2">
+      <div class="field"><label>Client name *</label><input id="toName" placeholder="Acme Pvt Ltd"/></div>
+      <div class="field"><label>Client GSTIN (optional)</label><input id="toGST" placeholder="27BBBBB1111B1Z1"/></div>
+    </div>
+    <div class="grid2">
+      <div class="field"><label>Invoice number *</label><input id="invoiceNum" placeholder="INV-001"/></div>
+      <div class="field"><label>Invoice date *</label><input id="invoiceDate" type="date"/></div>
+    </div>
+    <div class="field"><label>Client address</label><textarea id="toAddress" placeholder="456, BKC, Mumbai, Maharashtra - 400051"></textarea></div>
+  </div>
+
+  <!-- GST TYPE -->
+  <div class="card">
+    <div class="card-title">GST type</div>
+    <div class="radio-group" id="gstTypeGroup">
+      <div class="radio-opt active" onclick="setGSTType('intra')">Intra-state<br><span style="font-size:11px;font-weight:400;color:inherit">CGST + SGST</span></div>
+      <div class="radio-opt" onclick="setGSTType('inter')">Inter-state<br><span style="font-size:11px;font-weight:400;color:inherit">IGST only</span></div>
+      <div class="radio-opt" onclick="setGSTType('none')">No GST<br><span style="font-size:11px;font-weight:400;color:inherit">0%</span></div>
+    </div>
+    <div style="margin-top:12px" id="gstRateRow">
+      <label>GST rate</label>
+      <select id="gstRate" onchange="calcTotal()">
+        <option value="5">5%</option>
+        <option value="12">12%</option>
+        <option value="18" selected>18%</option>
+        <option value="28">28%</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- ITEMS -->
+  <div class="card">
+    <div class="card-title">Services / items</div>
+    <div class="items-header">
+      <span>Description</span><span>Qty</span><span>Rate (₹)</span><span class="h-amount">Amount</span><span></span>
+    </div>
+    <div id="itemsContainer"></div>
+    <button class="add-btn" onclick="addItem()">+ Add item</button>
+    <div class="summary" style="margin-top:1rem" id="summary">
+      <div class="sum-row"><span>Subtotal</span><span id="subtotal">₹0.00</span></div>
+      <div id="taxRows"></div>
+      <div class="sum-row total"><span>Total</span><span id="total">₹0.00</span></div>
+    </div>
+  </div>
+
+  <!-- NOTES -->
+  <div class="card">
+    <div class="card-title">Additional notes (optional)</div>
+    <textarea id="notes" placeholder="Payment due within 30 days. Thank you for your business!"></textarea>
+  </div>
+
+  <button class="btn-main" onclick="generatePDF()">
+    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+    Download PDF Invoice
+  </button>
+  <button class="btn-secondary" onclick="shareWhatsApp()">Share on WhatsApp</button>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+let gstType = 'intra';
+let items = [];
+
+function init(){
+  document.getElementById('invoiceDate').value = new Date().toISOString().split('T')[0];
+  document.getElementById('invoiceNum').value = 'INV-00' + Math.floor(Math.random()*900+100);
+  addItem();
+}
+
+function setGSTType(t){
+  gstType = t;
+  document.querySelectorAll('.radio-opt').forEach((el,i)=>{
+    el.classList.toggle('active', ['intra','inter','none'][i]===t);
+  });
+  document.getElementById('gstRateRow').style.display = t==='none'?'none':'block';
+  calcTotal();
+}
+
+function addItem(){
+  const id = Date.now();
+  items.push({id});
+  renderItems();
+}
+
+function removeItem(id){
+  items = items.filter(i=>i.id!==id);
+  if(items.length===0) addItem();
+  else renderItems();
+}
+
+function renderItems(){
+  const c = document.getElementById('itemsContainer');
+  c.innerHTML = items.map(item=>`
+    <div class="item-row" id="row-${item.id}">
+      <input placeholder="Web design service" oninput="calcTotal()" id="desc-${item.id}" value="${item.desc||''}"/>
+      <input type="number" placeholder="1" min="1" value="${item.qty||1}" oninput="calcTotal()" id="qty-${item.id}"/>
+      <input type="number" placeholder="5000" min="0" value="${item.rate||''}" oninput="calcTotal()" id="rate-${item.id}"/>
+      <input class="amount-cell" readonly id="amt-${item.id}" value="₹0.00" style="background:var(--bg2);color:var(--t2)"/>
+      <button class="del-btn" onclick="removeItem(${item.id})">×</button>
+    </div>
+  `).join('');
+  calcTotal();
+}
+
+function calcTotal(){
+  let subtotal = 0;
+  items.forEach(item=>{
+    const qty = parseFloat(document.getElementById('qty-'+item.id)?.value)||0;
+    const rate = parseFloat(document.getElementById('rate-'+item.id)?.value)||0;
+    const amt = qty*rate;
+    const el = document.getElementById('amt-'+item.id);
+    if(el) el.value = '₹'+amt.toFixed(2);
+    subtotal += amt;
+  });
+  const rate = gstType==='none'?0:parseFloat(document.getElementById('gstRate').value)||18;
+  const tax = subtotal * rate/100;
+  const total = subtotal + tax;
+
+  document.getElementById('subtotal').textContent = '₹'+subtotal.toFixed(2);
+  document.getElementById('total').textContent = '₹'+total.toFixed(2);
+
+  let taxHTML = '';
+  if(gstType==='intra' && tax>0){
+    taxHTML = `<div class="sum-row"><span>CGST (${rate/2}%)</span><span>₹${(tax/2).toFixed(2)}</span></div>
+               <div class="sum-row"><span>SGST (${rate/2}%)</span><span>₹${(tax/2).toFixed(2)}</span></div>`;
+  } else if(gstType==='inter' && tax>0){
+    taxHTML = `<div class="sum-row"><span>IGST (${rate}%)</span><span>₹${tax.toFixed(2)}</span></div>`;
+  }
+  document.getElementById('taxRows').innerHTML = taxHTML;
+}
+
+function getFormData(){
+  return {
+    fromName: document.getElementById('fromName').value.trim(),
+    fromGST: document.getElementById('fromGST').value.trim(),
+    fromEmail: document.getElementById('fromEmail').value.trim(),
+    fromPhone: document.getElementById('fromPhone').value.trim(),
+    fromAddress: document.getElementById('fromAddress').value.trim(),
+    upiId: document.getElementById('upiId').value.trim(),
+    toName: document.getElementById('toName').value.trim(),
+    toGST: document.getElementById('toGST').value.trim(),
+    invoiceNum: document.getElementById('invoiceNum').value.trim(),
+    invoiceDate: document.getElementById('invoiceDate').value,
+    toAddress: document.getElementById('toAddress').value.trim(),
+    notes: document.getElementById('notes').value.trim(),
+    gstType,
+    gstRate: gstType==='none'?0:parseFloat(document.getElementById('gstRate').value)||18,
+  };
+}
+
+function validate(d){
+  if(!d.fromName){showToast('Enter your name/business name');return false}
+  if(!d.toName){showToast('Enter client name');return false}
+  if(!d.invoiceNum){showToast('Enter invoice number');return false}
+  const hasItems = items.some(item=>{
+    const r = parseFloat(document.getElementById('rate-'+item.id)?.value)||0;
+    return r>0;
+  });
+  if(!hasItems){showToast('Add at least one item with a rate');return false}
+  return true;
+}
+
+function generatePDF(){
+  const d = getFormData();
+  if(!validate(d)) return;
+  const {jsPDF} = window.jspdf;
+  const doc = new jsPDF({unit:'mm',format:'a4'});
+  const W=210,margin=15;
+  let y=margin;
+
+  // Header bg
+  doc.setFillColor(29,158,117);
+  doc.rect(0,0,W,38,'F');
+
+  // Logo text
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(22);
+  doc.setTextColor(255,255,255);
+  doc.text('BillKar',margin,22);
+
+  // INVOICE label
+  doc.setFontSize(11);
+  doc.setFont('helvetica','normal');
+  doc.text('TAX INVOICE',W-margin,18,{align:'right'});
+  doc.setFontSize(9);
+  doc.text(`Invoice: ${d.invoiceNum}`,W-margin,25,{align:'right'});
+  doc.text(`Date: ${formatDate(d.invoiceDate)}`,W-margin,31,{align:'right'});
+  y=48;
+
+  // From / To
+  doc.setFontSize(8);
+  doc.setTextColor(136,136,136);
+  doc.text('FROM',margin,y);
+  doc.text('TO',W/2+2,y);
+  y+=5;
+
+  doc.setTextColor(26,26,26);
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(11);
+  doc.text(d.fromName||'—',margin,y);
+  doc.text(d.toName||'—',W/2+2,y);
+  y+=5;
+
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(8.5);
+  doc.setTextColor(85,85,85);
+  const fromLines = [];
+  if(d.fromGST) fromLines.push('GSTIN: '+d.fromGST);
+  if(d.fromEmail) fromLines.push(d.fromEmail);
+  if(d.fromPhone) fromLines.push(d.fromPhone);
+  if(d.fromAddress) d.fromAddress.split('\n').forEach(l=>fromLines.push(l));
+
+  const toLines = [];
+  if(d.toGST) toLines.push('GSTIN: '+d.toGST);
+  if(d.toAddress) d.toAddress.split('\n').forEach(l=>toLines.push(l));
+
+  const maxLines = Math.max(fromLines.length, toLines.length);
+  for(let i=0;i<maxLines;i++){
+    if(fromLines[i]) doc.text(fromLines[i],margin,y);
+    if(toLines[i]) doc.text(toLines[i],W/2+2,y);
+    y+=4.5;
+  }
+  y+=6;
+
+  // Items table header
+  doc.setFillColor(243,242,238);
+  doc.rect(margin,y-4,W-margin*2,8,'F');
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(8);
+  doc.setTextColor(136,136,136);
+  doc.text('#',margin+2,y);
+  doc.text('DESCRIPTION',margin+10,y);
+  doc.text('QTY',W-80,y,{align:'right'});
+  doc.text('RATE',W-55,y,{align:'right'});
+  doc.text('AMOUNT',W-margin,y,{align:'right'});
+  y+=7;
+
+  // Items
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(9);
+  doc.setTextColor(26,26,26);
+  let subtotal=0;
+  items.forEach((item,i)=>{
+    const desc = document.getElementById('desc-'+item.id)?.value||'Service';
+    const qty = parseFloat(document.getElementById('qty-'+item.id)?.value)||1;
+    const rate = parseFloat(document.getElementById('rate-'+item.id)?.value)||0;
+    const amt = qty*rate;
+    subtotal+=amt;
+    if(i%2===0){doc.setFillColor(250,250,248);doc.rect(margin,y-4,W-margin*2,7,'F')}
+    doc.text(String(i+1),margin+2,y);
+    doc.text(desc.substring(0,55),margin+10,y);
+    doc.text(String(qty),W-80,y,{align:'right'});
+    doc.text('₹'+rate.toFixed(2),W-55,y,{align:'right'});
+    doc.text('₹'+amt.toFixed(2),W-margin,y,{align:'right'});
+    y+=7;
+  });
+
+  y+=4;
+  // Totals
+  const taxRate = d.gstRate;
+  const tax = subtotal * taxRate/100;
+  const total = subtotal+tax;
+
+  const drawSumRow=(label,val,bold=false)=>{
+    if(bold){doc.setFillColor(225,245,238);doc.rect(W-80,y-4,80-margin+margin,7,'F')}
+    doc.setFont('helvetica',bold?'bold':'normal');
+    doc.setFontSize(bold?10:9);
+    doc.setTextColor(bold?29:85,bold?158:85,bold?117:85);
+    if(bold) doc.setTextColor(15,110,86);
+    else doc.setTextColor(85,85,85);
+    doc.text(label,W-50,y,{align:'right'});
+    doc.text(val,W-margin,y,{align:'right'});
+    y+=6;
+  };
+
+  doc.setDrawColor(224,223,216);
+  doc.line(margin,y,W-margin,y);
+  y+=5;
+  drawSumRow('Subtotal','₹'+subtotal.toFixed(2));
+  if(d.gstType==='intra'&&tax>0){
+    drawSumRow(`CGST (${taxRate/2}%)`,'₹'+(tax/2).toFixed(2));
+    drawSumRow(`SGST (${taxRate/2}%)`,'₹'+(tax/2).toFixed(2));
+  } else if(d.gstType==='inter'&&tax>0){
+    drawSumRow(`IGST (${taxRate}%)`,'₹'+tax.toFixed(2));
+  }
+  drawSumRow('TOTAL','₹'+total.toFixed(2),true);
+
+  // UPI
+  if(d.upiId){
+    y+=4;
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(9);
+    doc.setTextColor(29,158,117);
+    doc.text('Pay via UPI: '+d.upiId,margin,y);
+    y+=5;
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(8);
+    doc.setTextColor(136,136,136);
+    doc.text('UPI link: upi://pay?pa='+d.upiId+'&pn='+encodeURIComponent(d.fromName)+'&am='+total.toFixed(2)+'&cu=INR&tn=Invoice+'+d.invoiceNum,margin,y);
+  }
+
+  // Notes
+  if(d.notes){
+    y+=8;
+    doc.setFillColor(243,242,238);
+    doc.rect(margin,y-4,W-margin*2,4+d.notes.split('\n').length*5,'F');
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(8);
+    doc.setTextColor(136,136,136);
+    doc.text('NOTES',margin+3,y);
+    y+=5;
+    doc.setFont('helvetica','normal');
+    doc.setTextColor(85,85,85);
+    doc.text(doc.splitTextToSize(d.notes,W-margin*2-6),margin+3,y);
+  }
+
+  // Footer
+  doc.setFillColor(29,158,117);
+  doc.rect(0,285,W,12,'F');
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(8);
+  doc.setTextColor(255,255,255);
+  doc.text('Generated by BillKar — billkar.in',W/2,292,{align:'center'});
+
+  doc.save(`${d.invoiceNum}_${d.toName.replace(/\s+/g,'_')}.pdf`);
+  showToast('PDF downloaded successfully!');
+}
+
+function shareWhatsApp(){
+  const d = getFormData();
+  if(!validate(d)) return;
+  let subtotal=0;
+  items.forEach(item=>{
+    const qty=parseFloat(document.getElementById('qty-'+item.id)?.value)||1;
+    const rate=parseFloat(document.getElementById('rate-'+item.id)?.value)||0;
+    subtotal+=qty*rate;
+  });
+  const tax=subtotal*d.gstRate/100;
+  const total=subtotal+tax;
+  let msg = `*Invoice ${d.invoiceNum}*\nFrom: ${d.fromName}\nTo: ${d.toName}\nDate: ${formatDate(d.invoiceDate)}\n\n`;
+  items.forEach(item=>{
+    const desc=document.getElementById('desc-'+item.id)?.value||'Service';
+    const qty=parseFloat(document.getElementById('qty-'+item.id)?.value)||1;
+    const rate=parseFloat(document.getElementById('rate-'+item.id)?.value)||0;
+    msg+=`• ${desc}: ₹${(qty*rate).toFixed(2)}\n`;
+  });
+  msg+=`\nSubtotal: ₹${subtotal.toFixed(2)}\nGST: ₹${tax.toFixed(2)}\n*Total: ₹${total.toFixed(2)}*`;
+  if(d.upiId) msg+=`\n\nPay via UPI: ${d.upiId}`;
+  window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
+}
+
+function formatDate(d){
+  if(!d) return '';
+  const [y,m,day]=d.split('-');
+  return `${day}/${m}/${y}`;
+}
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+init();
+</script>
+</body>
+</html>
